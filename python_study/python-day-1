@@ -1,1 +1,38 @@
-print('play!')
+# print('play!')
+
+# x = 1
+# print(x)
+# x = x + 8
+# print(x)
+
+# x = 7
+# if x > 10:
+#     print('bigger')
+# if x < 10:
+#     print('smaller')
+
+# n = 7
+# while n > 0:
+#     print(n)
+#     n = n - 1
+# print('done')
+
+# a = '123'
+# b = int(a)
+# print(b+1)
+
+# name = input('Who are you?')
+# print('Welcome', name)
+
+# Convert time between locations (only hours for now)
+# polt = input('Pilish location time')
+# ukrt = int(polt) + 1  # Ukraine time
+# rust = int(polt) + 2  # Russian time
+# utc = int(polt) - 1  # UTC time
+# print('Ukraine time', ukrt, 'Russian time', rust, 'UTC time', utc)
+
+# Task "prompt user working hours"
+hours = input('Number of working hours: ')
+rate = input('Price of 1 hour: ')
+pay = float(hours) * float(rate)
+print('Need to pay', pay)
