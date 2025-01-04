@@ -1,0 +1,92 @@
+# x = 5
+# if x >= 5:
+#     print('bigger or equal 5')
+# else:
+#     print('smaller then 5')
+# print('done')
+
+# x = 8
+# if x > 8:
+#     print('bigger then 5')
+# elif x < 8:
+#     print('smaler then 8')
+# elif x == 8:
+#     print('x = 8')
+# print('done')
+
+# x = 5
+# val = input('put any number: ')
+# try:
+#     x = x + float(val)
+#     print(x)
+# except Exception:
+#     val = 400
+#     print(val, 'Not a number, please try again')
+# if val != 400:
+#     print('done')
+# else:
+#     x = 5
+#     val1 = input('try again with number: ')
+#     try:
+#         x = x + float(val1)
+#         print(x)
+#     except Exception:
+#         val1 = ('400')
+#         print('400 error. try next time')
+#     print('done with this attempt')
+# quit()
+
+# def something():
+#     print('hello')
+#     print("let's play!")
+
+
+# print('see what I have')
+# something()
+
+# def dummy(num):
+#     if num == 1:
+#         return 'one'
+#     elif num == 2:
+#         return 'two'
+#     elif num == 3:
+#         return 'three'
+#     else:
+#         return 'not cofigured'
+
+
+# num = input('input number: ')
+# num = float(num)
+# print(dummy(num), '=', num)
+# quit()
+
+# for i in [3, 5, 7, 9, 1]:
+#     while i > 0:
+#         print(i)
+#         i = i - 1
+#         if i == 0:
+#             break
+#     print(i)
+# print('done')
+
+# definition of largest number, breaking with the 1st num < largest
+# largest = -1
+# print('before', largest)
+# for num in [2, 34, 12, 56, 86, 87, 0, 90, 45, 91]:
+#     if num > largest:
+#         largest = num
+#         print(largest, num)
+#     elif num < largest:
+#         break
+# print('after', largest)
+
+# definition of smallest number
+smallest = None
+print('before', smallest)
+for num in [2, 34, 12, 56, 86, 87, 0, 90, 45, 91]:
+    if smallest is None:
+        smallest = num
+    elif num < smallest:
+        smallest = num
+        print(smallest, num)
+print('after', smallest)
