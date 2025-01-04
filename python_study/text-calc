@@ -1,0 +1,8 @@
+x = input('input your text: ')
+
+
+def letter(x):
+    return max(x)
+
+
+print(letter(x))
