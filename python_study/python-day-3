@@ -1,0 +1,32 @@
+# word = input('Enter the word: ')  # should be uncommented for next programs
+
+# Counting of letters in a word/sentancce (iteration variable)
+# i = 0
+# while i < len(word):
+#     letter = word[i]
+#     print(i, letter)
+#     i = i + 1
+# print('Count of letters in word:', len(word))
+
+# define loop for words
+# print(word)
+# for letter in word:
+#     print(letter)
+
+# fruit = 'banana'
+# for letter in fruit:
+#     print(letter)
+
+# count = 0
+# for letter in word:
+#     if letter == 'a':
+#         count = count + 1
+# print(count)
+
+# Print part of value
+s = 'Artem Lapchev'
+print(s[0:6])
+print(s[:2])
+print(s[:])
+print(s[7:])
+print(s[3])
