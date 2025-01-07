@@ -1,0 +1,17 @@
+So now what we're going to do is we're going to keep working on this. We're going to do something in the loop, we're going to do something before and something after.
+And we're going to accomplish different things. So the first thing that we're going to accomplish is counting something, right? I'm counting the number of things that we are going to be looping through.
+Now, in this case, it's kind of silly. But, just, in general, these are called counters. So, let's just say we had dot dot dot dot, a whole bunch of these things.
+And we didn't exactly, we can look at this and say there are six of them, that's not the point. The point is, if we have a loop and in loop we want to keep track of how many we've seen.
+Well, you do this counting thing, okay? So the way it works is you set a variable to 0. This is the top part, normally this would be called count, but I'm going to use a bad non-mnemonic value called zork, just so you don't get too used to it.
+So we so far how many have we seen? Well we've seen 0. And then we're going to go it thing is going to be 9, 41, 12. So thing is going to be the iteration variable.
+Each time through the loop, we're going to add 1 to zork, increment is another word for this, zork = zork + 1. We print out the thing we're looking at and we print out the current value for zork.
+So, the first time through 9, and then, that's the first thing we saw, 41, the second. So, and each time, this goes up by 1. It doesn't really matter what these things are, but then, we run this many times.
+And when we're done then we say, okay, loop is all done, right? There's the end of the block. And when it's all said and done, there were 6 things. Now again, 6 is kind of obvious.
+We could just look at it and know that there are 6. But this is a way to keep track of the number of times that a loop is executed. You set it to 0 at the place, you add 1 to it, and then you print out the end.
+At the beginning, before it starts set it to 0, add 1 each time through, and then print out the count at the end. So that's counting. The next thing we're going to do is total up a series of values.
+So in this case we're going to total them up. It makes a lot more sense now and we're going to have another variable, zork. I would probably call this total.
+During the loop, it'll be the running total and at the end of loop it will be the total. And so total = 0, before we, that's the running total of what we have seen.
+So now 9 comes out and 0 + 9 is 9, so the running total is 9 and 9 was what we looked at. Then 41 comes in, then we take 9 plus 41. Running total's 50, we read 41, go back up, 12 comes in. 50 plus 12 is 62.
+So, that's our running total. Next time we get 3. 62 plus 3 is 65. So, this line prints out. Then we get 74. So, 65 plus 74 is 139. So, that's the running total.
+We go and do the last one, 15. 139 plus 15 is 154. We print that out. And now it goes back up but the for loop is done, so out we come. So at the end, when it's all said and done, this this running total become the total, 154.
+So, we know certainly when you print all that stuff out, right, you wouldn't print that out. But at the end if you do this. And so the difference between the count and the total is instead of adding 1 here, you add the thing you're running that you're totaling up.

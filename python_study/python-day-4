@@ -1,0 +1,35 @@
+# print('Hello\nWorld')
+
+# Read from external file and output the line which started with "We"
+# fname = input('Enter the file adress: ')
+# for example: "python_study/test_plain_txt"
+# fhand = open('fname')
+# for line in fhand:
+#     line = line.rstrip()
+#     if not line.startswith('We'):  # could be also like "if not 'we' in line"
+#         continue
+#     print(line)
+
+# Count of lines in file
+# fname = input('Enter the file adress: ')
+# for example: "python_study/test_plain_txt"
+# try:
+#     fhand = open(fname)
+# except Exception:
+#     print('File', fname, 'can not be opened or does not exist')
+#     quit()
+# count = 0
+# for line in fhand:
+#     if line.startswith('So'):
+#         count = count + 1
+# print('There were', count, 'of lines in', fname)
+
+# splitting str to the list (collection)
+# abc = 'there;are;4;stuffs'
+# stuff = abc.split(';')
+# print(stuff)
+# print(len(stuff))
+# print(stuff[1])
+# for w in stuff:
+#     print(w)
+
