@@ -1,0 +1,38 @@
+# exaple of dictionaries
+# seasons = dict()
+# seasons['winter1'] = 2
+# seasons['spring'] = 3
+# seasons['summer'] = 3
+# seasons['autumn'] = 3
+# seasons['winter2'] = 1
+# print(seasons)
+# print(seasons['winter1'])
+
+# using .get method for simplify counting. Idioma for such cases
+# count = dict()
+# names = ['glenn', 'zwen', 'cwen', 'gogen', 'gulien', 'zwen']
+# for name in names:
+#     count[name] = count.get(name, 0) + 1
+# print(count)
+
+# counting code example ??????
+count = dict()
+fname = input('Enter the file adress: ')
+try:
+    fhand = open(fname)
+except Exception:
+    print('File', fname, 'can not be opened or does not exist')
+    quit()
+for line in fhand:
+    words = line.split()
+    for word in words:
+        count[word] = count.get(word, 0) + 1
+#     print('Counts', count)
+
+bigcount = None
+bigword = None
+for word, count in count.items():
+    if bigcount is None or count > bigcount:
+        bigword = word
+        bigcount = count
+print(bigcount, bigword)
