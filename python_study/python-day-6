@@ -1,0 +1,12 @@
+# tuples examples !!! 'tuple' object does not support item assignment
+
+# x = (1, 2, 3, 4)
+# x [2] = 2
+
+# tuples feature: assignment variables to vales inside tuple
+# (x, y) = (13, 17)
+# print(y)
+
+# sorting of the given dictioanary (reverse here is only for from > to <)
+# c = {'a': 12, 'b': 82, 'c': 59, 'd': 74}
+# print(sorted([(v, k) for k, v in c.items()], reverse=True))
