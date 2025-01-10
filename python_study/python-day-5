@@ -15,7 +15,7 @@
 #     count[name] = count.get(name, 0) + 1
 # print(count)
 
-# counting code example ??????
+# counting code example
 count = dict()
 fname = input('Enter the file adress: ')
 try:
@@ -24,7 +24,8 @@ except Exception:
     print('File', fname, 'can not be opened or does not exist')
     quit()
 for line in fhand:
-    words = line.split()
+    line = line.rstrip()
+    words = line.split(' ')
     for word in words:
         count[word] = count.get(word, 0) + 1
 #     print('Counts', count)
