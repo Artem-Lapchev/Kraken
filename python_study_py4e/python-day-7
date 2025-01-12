@@ -1,0 +1,38 @@
+# RegEx for find all numbers
+# import re
+
+# x = 'my favorite numbers are 13 and 27'
+# y = re.findall('[0-9]+', x)
+# print(y)
+
+# Gready: ^F.+:
+# non-Gready: ^F.+?:
+# non-Whitespace: \S+@\S+ (for re.findall regex)
+
+# regex to find a sertain email adress from the shared str
+# import re
+
+# x = """
+# From edX edX@news.edx.org : Congrats! Introduction to Programming Python
+# """
+# y = re.findall(r'^From.+ *(\S+@\S+)', x)
+# print(y)
+
+# HTTP request by python. Example to test endpoint
+import socket
+
+mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print(mysock)
+mysock = mysock.connect(('data.pr4e.org', 80))
+print(mysock)
+cmd = 'GET http://data.pr4e.org/romeo.txt HTTP/1.0\n\n'.encode()
+print(mysock)
+print(cmd)
+mysock.send(cmd)
+
+while True:
+    data = mysock.recv(512)
+    if len(data < 1):
+        break
+    print(data.decode())
+mysock.close()
