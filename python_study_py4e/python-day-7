@@ -18,21 +18,69 @@
 # y = re.findall(r'^From.+ *(\S+@\S+)', x)
 # print(y)
 
-# HTTP request by python. Example to test endpoint
+# HTTP request by python. Example to test endpoint. My code
+# import socket
+
+# mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# print(mysock)
+# mysock = mysock.connect(('data.pr4e.org', 80))
+# print(mysock)
+# cmd = 'GET http://data.pr4e.org/romeo.txt HTTP/1.0\n\n'.encode()
+# print(mysock)
+# print(cmd)
+# mysock.send(cmd)
+
+# while True:
+#     data = mysock.recv(512)
+#     if len(data < 1):
+#         break
+#     print(data.decode())
+# mysock.close()
+
+# HTTP request by python. Example to test endpoint. Coop with Gemini
+# import socket
+
+# try:
+#     mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+#     mysock = mysock.connect(('data.pr4e.org', 80))
+
+#     cmd = f'GET http://data.pr4e.org/romeo.txt HTTP/1.0\r\n\r\n'.encode()
+
+#     mysock.send(cmd)
+
+#     while True:
+#         data = mysock.recv(512)
+#         if not data:
+#             break
+#         print(data.decode())
+
+# except socket.error as e:
+#     print(f'Error connecting to server: {e}')
+
+# finally:
+#     if mysock:
+#         mysock.close()
+
+# HTTP request by python. Example to test endpoint provided by Gemini
 import socket
 
-mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print(mysock)
-mysock = mysock.connect(('data.pr4e.org', 80))
-print(mysock)
-cmd = 'GET http://data.pr4e.org/romeo.txt HTTP/1.0\n\n'.encode()
-print(mysock)
-print(cmd)
-mysock.send(cmd)
+try:
+    host = 'data.pr4e.org'
+    port = 80
+    request = f"GET /romeo.txt HTTP/1.1\r\nHost: {host}\r\n\r\n"
 
-while True:
-    data = mysock.recv(512)
-    if len(data < 1):
-        break
-    print(data.decode())
-mysock.close()
+    mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    mysock.connect((host, port))
+    mysock.sendall(request.encode())
+
+    while True:
+        data = mysock.recv(512)
+        if not data:
+            break
+        print(data.decode())
+
+    mysock.close()
+
+except socket.error as e:
+    print(f"Error connecting to the server: {e}")
