@@ -3,189 +3,430 @@ import pandas as pd
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 import time
 import re
+from urllib.parse import quote
 
 # Настройка страницы
-st.set_page_config(page_title="Мониторинг цен", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Мониторинг цен косметики", page_icon="💄", layout="wide")
 
-st.title("💰 Мониторинг цен товаров")
+st.title("💄 Мониторинг цен косметики и парфюмерии")
 st.markdown("---")
 
-# Функция для парсинга Wildberries
-def parse_wildberries(browser, search_query, url):
-    """Парсинг товаров с Wildberries"""
+
+def parse_notino(page, search_query):
+    """Парсинг товаров с Notino.pl"""
     results = []
     try:
-        page = browser.new_page()
-        page.set_viewport_size({"width": 1920, "height": 1080})
+        st.info(f"🔍 Notino.pl: Ищу товары...")
         
-        st.info(f"🔍 Открываю страницу: {url}")
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        time.sleep(3)  # Ждем загрузки контента
-        
-        # CSS-селекторы для Wildberries (обновлено для актуальной версии сайта)
-        # ⚠️ ВАЖНО: Эти селекторы могут меняться! Проверяйте через DevTools браузера
-        product_cards = page.query_selector_all('article.product-card')
-        
-        if not product_cards:
-            st.warning("⚠️ Товары не найдены. Возможно, нужно обновить селекторы.")
-            return results
-        
-        st.success(f"✅ Найдено карточек товаров: {len(product_cards)}")
-        
-        for card in product_cards[:20]:  # Берем первые 20 товаров
-            try:
-                # Название товара
-                # 🔧 СЕЛЕКТОР ДЛЯ ИЗМЕНЕНИЯ: Измените селектор ниже для вашего сайта
-                name_elem = card.query_selector('.product-card__name')
-                name = name_elem.inner_text().strip() if name_elem else "Не указано"
-                
-                # Фильтрация по поисковому запросу
-                if search_query.lower() not in name.lower():
-                    continue
-                
-                # Артикул
-                # 🔧 СЕЛЕКТОР ДЛЯ ИЗМЕНЕНИЯ
-                article_elem = card.query_selector('.product-card__article')
-                article = article_elem.inner_text().strip() if article_elem else "Не указан"
-                
-                # Цена
-                # 🔧 СЕЛЕКТОР ДЛЯ ИЗМЕНЕНИЯ
-                price_elem = card.query_selector('.price__lower-price')
-                if price_elem:
-                    price_text = price_elem.inner_text().strip()
-                    # Извлекаем только цифры
-                    price = re.sub(r'[^\d]', '', price_text)
-                    price = f"{price} ₽" if price else "Не указана"
-                else:
-                    price = "Не указана"
-                
-                results.append({
-                    "Название": name,
-                    "Артикул": article,
-                    "Цена": price,
-                    "Источник": "Wildberries"
-                })
-                
-            except Exception as e:
-                st.warning(f"⚠️ Ошибка при обработке карточки: {str(e)}")
-                continue
-        
-        page.close()
-        
-    except PlaywrightTimeout:
-        st.error(f"❌ Превышено время ожидания загрузки страницы: {url}")
-    except Exception as e:
-        st.error(f"❌ Ошибка при парсинге {url}: {str(e)}")
-    
-    return results
-
-
-# Функция для парсинга других сайтов (шаблон)
-def parse_generic_site(browser, search_query, url):
-    """
-    Шаблон для парсинга других сайтов
-    
-    🔧 КАК АДАПТИРОВАТЬ ДЛЯ ДРУГОГО САЙТА:
-    1. Откройте сайт в браузере Chrome/Edge
-    2. Нажмите F12 (открыть DevTools)
-    3. Нажмите Ctrl+Shift+C и наведите на элемент товара
-    4. Найдите CSS-селекторы для: названия, артикула, цены
-    5. Замените селекторы в коде ниже
-    """
-    results = []
-    try:
-        page = browser.new_page()
-        page.set_viewport_size({"width": 1920, "height": 1080})
-        
-        st.info(f"🔍 Открываю страницу: {url}")
-        page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        search_url = f"https://www.notino.pl/search/{quote(search_query)}/"
+        page.goto(search_url, wait_until="networkidle", timeout=30000)
         time.sleep(3)
         
-        # 🔧 ЗАМЕНИТЕ СЕЛЕКТОРЫ НА АКТУАЛЬНЫЕ ДЛЯ ВАШЕГО САЙТА
-        product_cards = page.query_selector_all('.product-item')  # Основной контейнер товара
+        # Ждем загрузки товаров
+        page.wait_for_selector('div[class*="styled__box"]', timeout=10000)
         
-        if not product_cards:
-            st.warning("⚠️ Товары не найдены. Проверьте селектор '.product-item'")
-            return results
+        # Прокрутка для загрузки всех товаров
+        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        time.sleep(2)
         
-        st.success(f"✅ Найдено карточек товаров: {len(product_cards)}")
+        # Получаем все карточки товаров
+        products = page.query_selector_all('div[class*="styled__box"]')
         
-        for card in product_cards[:20]:
+        st.success(f"✅ Notino.pl: Найдено {len(products)} товаров")
+        
+        for product in products[:15]:
             try:
-                # 🔧 ЗАМЕНИТЕ на селектор названия товара
-                name_elem = card.query_selector('.product-title')
-                name = name_elem.inner_text().strip() if name_elem else "Не указано"
-                
-                if search_query.lower() not in name.lower():
+                # Название товара
+                title_elem = product.query_selector('h3, div[class*="ProductTitle"]')
+                if not title_elem:
                     continue
+                    
+                title = title_elem.inner_text().strip()
                 
-                # 🔧 ЗАМЕНИТЕ на селектор артикула
-                article_elem = card.query_selector('.product-sku')
-                article = article_elem.inner_text().strip() if article_elem else "Не указан"
+                # Бренд
+                brand_elem = product.query_selector('span[class*="ProductBrand"]')
+                brand = brand_elem.inner_text().strip() if brand_elem else ""
                 
-                # 🔧 ЗАМЕНИТЕ на селектор цены
-                price_elem = card.query_selector('.product-price')
-                if price_elem:
-                    price_text = price_elem.inner_text().strip()
-                    price = re.sub(r'[^\d]', '', price_text)
-                    price = f"{price} ₽" if price else "Не указана"
-                else:
-                    price = "Не указана"
+                # Цена
+                price_elem = product.query_selector('span[class*="Price"]')
+                price = price_elem.inner_text().strip() if price_elem else "Цена не указана"
+                
+                # Ссылка
+                link_elem = product.query_selector('a[href]')
+                link = ""
+                if link_elem:
+                    href = link_elem.get_attribute('href')
+                    if href:
+                        link = f"https://www.notino.pl{href}" if not href.startswith('http') else href
                 
                 results.append({
-                    "Название": name,
-                    "Артикул": article,
+                    "Магазин": "Notino.pl",
+                    "Бренд": brand,
+                    "Название": title,
                     "Цена": price,
-                    "Источник": url
+                    "Ссылка": link
                 })
                 
             except Exception as e:
                 continue
-        
-        page.close()
-        
+                
+    except PlaywrightTimeout:
+        st.warning("⚠️ Notino.pl: Превышено время ожидания")
     except Exception as e:
-        st.error(f"❌ Ошибка при парсинге {url}: {str(e)}")
+        st.error(f"❌ Notino.pl: Ошибка - {str(e)}")
     
     return results
 
 
-# Основная функция парсинга
-def scrape_prices(search_query, urls):
+def parse_makeup_ua(page, search_query):
+    """Парсинг товаров с Makeup.com.ua"""
+    results = []
+    try:
+        st.info(f"🔍 Makeup.com.ua: Ищу товары...")
+        
+        search_url = f"https://makeup.com.ua/ua/search/?q={quote(search_query)}"
+        page.goto(search_url, wait_until="networkidle", timeout=30000)
+        time.sleep(3)
+        
+        # Ждем карточки товаров
+        page.wait_for_selector('div.catalog-item', timeout=10000)
+        
+        products = page.query_selector_all('div.catalog-item')
+        
+        st.success(f"✅ Makeup.com.ua: Найдено {len(products)} товаров")
+        
+        for product in products[:15]:
+            try:
+                # Название
+                title_elem = product.query_selector('a.catalog-item__name')
+                if not title_elem:
+                    continue
+                    
+                title = title_elem.inner_text().strip()
+                
+                # Бренд
+                brand_elem = product.query_selector('span.catalog-item__brand')
+                brand = brand_elem.inner_text().strip() if brand_elem else ""
+                
+                # Цена
+                price_elem = product.query_selector('span[data-price]')
+                price = price_elem.inner_text().strip() if price_elem else "Цена не указана"
+                
+                # Ссылка
+                link = ""
+                if title_elem:
+                    href = title_elem.get_attribute('href')
+                    if href:
+                        link = f"https://makeup.com.ua{href}" if not href.startswith('http') else href
+                
+                results.append({
+                    "Магазин": "Makeup.com.ua",
+                    "Бренд": brand,
+                    "Название": title,
+                    "Цена": price,
+                    "Ссылка": link
+                })
+                
+            except Exception as e:
+                continue
+                
+    except PlaywrightTimeout:
+        st.warning("⚠️ Makeup.com.ua: Превышено время ожидания")
+    except Exception as e:
+        st.error(f"❌ Makeup.com.ua: Ошибка - {str(e)}")
+    
+    return results
+
+
+def parse_makeup_pl(page, search_query):
+    """Парсинг товаров с Makeup.pl"""
+    results = []
+    try:
+        st.info(f"🔍 Makeup.pl: Ищу товары...")
+        
+        search_url = f"https://makeup.pl/search/?q={quote(search_query)}"
+        page.goto(search_url, wait_until="networkidle", timeout=30000)
+        time.sleep(3)
+        
+        page.wait_for_selector('div.catalog-item', timeout=10000)
+        
+        products = page.query_selector_all('div.catalog-item')
+        
+        st.success(f"✅ Makeup.pl: Найдено {len(products)} товаров")
+        
+        for product in products[:15]:
+            try:
+                title_elem = product.query_selector('a.catalog-item__name')
+                if not title_elem:
+                    continue
+                    
+                title = title_elem.inner_text().strip()
+                
+                brand_elem = product.query_selector('span.catalog-item__brand')
+                brand = brand_elem.inner_text().strip() if brand_elem else ""
+                
+                price_elem = product.query_selector('span[data-price]')
+                price = price_elem.inner_text().strip() if price_elem else "Цена не указана"
+                
+                link = ""
+                if title_elem:
+                    href = title_elem.get_attribute('href')
+                    if href:
+                        link = f"https://makeup.pl{href}" if not href.startswith('http') else href
+                
+                results.append({
+                    "Магазин": "Makeup.pl",
+                    "Бренд": brand,
+                    "Название": title,
+                    "Цена": price,
+                    "Ссылка": link
+                })
+                
+            except Exception as e:
+                continue
+                
+    except PlaywrightTimeout:
+        st.warning("⚠️ Makeup.pl: Превышено время ожидания")
+    except Exception as e:
+        st.error(f"❌ Makeup.pl: Ошибка - {str(e)}")
+    
+    return results
+
+
+def parse_sephora(page, search_query):
+    """Парсинг товаров с Sephora.pl"""
+    results = []
+    try:
+        st.info(f"🔍 Sephora.pl: Ищу товары...")
+        
+        search_url = f"https://www.sephora.pl/search?q={quote(search_query)}"
+        page.goto(search_url, wait_until="networkidle", timeout=30000)
+        time.sleep(4)
+        
+        # Прокрутка для загрузки товаров
+        page.evaluate("window.scrollTo(0, 1000)")
+        time.sleep(2)
+        
+        # Пытаемся найти товары по разным селекторам
+        products = page.query_selector_all('div[data-at="product_tile"]')
+        if not products:
+            products = page.query_selector_all('article[data-comp*="ProductTile"]')
+        if not products:
+            products = page.query_selector_all('div[class*="ProductTile"]')
+        
+        st.success(f"✅ Sephora.pl: Найдено {len(products)} товаров")
+        
+        for product in products[:15]:
+            try:
+                # Название
+                title_elem = product.query_selector('span[data-at="sku_name"], div[class*="ProductName"]')
+                if not title_elem:
+                    continue
+                    
+                title = title_elem.inner_text().strip()
+                
+                # Бренд
+                brand_elem = product.query_selector('span[data-at="brand_name"], span[class*="Brand"]')
+                brand = brand_elem.inner_text().strip() if brand_elem else ""
+                
+                # Цена
+                price_elem = product.query_selector('span[data-at="price"], span[class*="Price"]')
+                price = price_elem.inner_text().strip() if price_elem else "Цена не указана"
+                
+                # Ссылка
+                link_elem = product.query_selector('a[href]')
+                link = ""
+                if link_elem:
+                    href = link_elem.get_attribute('href')
+                    if href:
+                        link = f"https://www.sephora.pl{href}" if not href.startswith('http') else href
+                
+                results.append({
+                    "Магазин": "Sephora.pl",
+                    "Бренд": brand,
+                    "Название": title,
+                    "Цена": price,
+                    "Ссылка": link
+                })
+                
+            except Exception as e:
+                continue
+                
+    except PlaywrightTimeout:
+        st.warning("⚠️ Sephora.pl: Превышено время ожидания")
+    except Exception as e:
+        st.error(f"❌ Sephora.pl: Ошибка - {str(e)}")
+    
+    return results
+
+
+def parse_douglas(page, search_query):
+    """Парсинг товаров с Douglas.pl"""
+    results = []
+    try:
+        st.info(f"🔍 Douglas.pl: Ищу товары...")
+        
+        search_url = f"https://www.douglas.pl/pl/search?text={quote(search_query)}"
+        page.goto(search_url, wait_until="networkidle", timeout=30000)
+        time.sleep(4)
+        
+        # Прокрутка
+        page.evaluate("window.scrollTo(0, 1000)")
+        time.sleep(2)
+        
+        products = page.query_selector_all('div[class*="product-tile"]')
+        if not products:
+            products = page.query_selector_all('div[data-testid*="product"]')
+        
+        st.success(f"✅ Douglas.pl: Найдено {len(products)} товаров")
+        
+        for product in products[:15]:
+            try:
+                title_elem = product.query_selector('span[class*="product-name"], div[class*="name"]')
+                if not title_elem:
+                    continue
+                    
+                title = title_elem.inner_text().strip()
+                
+                brand_elem = product.query_selector('span[class*="brand"]')
+                brand = brand_elem.inner_text().strip() if brand_elem else ""
+                
+                price_elem = product.query_selector('span[class*="price"]')
+                price = price_elem.inner_text().strip() if price_elem else "Цена не указана"
+                
+                link_elem = product.query_selector('a[href]')
+                link = ""
+                if link_elem:
+                    href = link_elem.get_attribute('href')
+                    if href:
+                        link = f"https://www.douglas.pl{href}" if not href.startswith('http') else href
+                
+                results.append({
+                    "Магазин": "Douglas.pl",
+                    "Бренд": brand,
+                    "Название": title,
+                    "Цена": price,
+                    "Ссылка": link
+                })
+                
+            except Exception as e:
+                continue
+                
+    except PlaywrightTimeout:
+        st.warning("⚠️ Douglas.pl: Превышено время ожидания")
+    except Exception as e:
+        st.error(f"❌ Douglas.pl: Ошибка - {str(e)}")
+    
+    return results
+
+
+def parse_brocard(page, search_query):
+    """Парсинг товаров с Brocard.ua"""
+    results = []
+    try:
+        st.info(f"🔍 Brocard.ua: Ищу товары...")
+        
+        search_url = f"https://www.brocard.ua/ua/search/?q={quote(search_query)}"
+        page.goto(search_url, wait_until="networkidle", timeout=30000)
+        time.sleep(4)
+        
+        page.evaluate("window.scrollTo(0, 1000)")
+        time.sleep(2)
+        
+        products = page.query_selector_all('div[class*="product-item"]')
+        if not products:
+            products = page.query_selector_all('article[class*="product"]')
+        
+        st.success(f"✅ Brocard.ua: Найдено {len(products)} товаров")
+        
+        for product in products[:15]:
+            try:
+                title_elem = product.query_selector('a[class*="product-name"], div[class*="name"]')
+                if not title_elem:
+                    continue
+                    
+                title = title_elem.inner_text().strip()
+                
+                brand_elem = product.query_selector('span[class*="brand"]')
+                brand = brand_elem.inner_text().strip() if brand_elem else ""
+                
+                price_elem = product.query_selector('span[class*="price"]')
+                price = price_elem.inner_text().strip() if price_elem else "Цена не указана"
+                
+                link = ""
+                if hasattr(title_elem, 'get_attribute'):
+                    href = title_elem.get_attribute('href')
+                    if href:
+                        link = f"https://www.brocard.ua{href}" if not href.startswith('http') else href
+                
+                results.append({
+                    "Магазин": "Brocard.ua",
+                    "Бренд": brand,
+                    "Название": title,
+                    "Цена": price,
+                    "Ссылка": link
+                })
+                
+            except Exception as e:
+                continue
+                
+    except PlaywrightTimeout:
+        st.warning("⚠️ Brocard.ua: Превышено время ожидания")
+    except Exception as e:
+        st.error(f"❌ Brocard.ua: Ошибка - {str(e)}")
+    
+    return results
+
+
+def scrape_prices(search_query, sites_to_search):
     """Главная функция для сбора данных"""
     all_results = []
     
     with sync_playwright() as p:
-        # Запуск браузера с эмуляцией реального пользователя
         browser = p.chromium.launch(
-            headless=True,  # Измените на False, чтобы видеть браузер
+            headless=True,
             args=[
                 '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage'
+                '--disable-dev-shm-usage',
+                '--no-sandbox',
+                '--disable-web-security'
             ]
         )
         
-        # Устанавливаем реальный User-Agent
         context = browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             viewport={'width': 1920, 'height': 1080},
-            locale='ru-RU'
+            locale='pl-PL'
         )
         
-        for url in urls:
-            url = url.strip()
-            if not url:
-                continue
-            
-            # Определяем тип сайта и используем соответствующий парсер
-            if 'wildberries.ru' in url or 'wb.ru' in url:
-                results = parse_wildberries(context, search_query, url)
-            else:
-                results = parse_generic_site(context, search_query, url)
-            
-            all_results.extend(results)
-            time.sleep(2)  # Пауза между запросами
+        page = context.new_page()
         
+        # Парсим выбранные сайты
+        if 'notino' in sites_to_search:
+            results = parse_notino(page, search_query)
+            all_results.extend(results)
+        
+        if 'makeup_ua' in sites_to_search:
+            results = parse_makeup_ua(page, search_query)
+            all_results.extend(results)
+        
+        if 'makeup_pl' in sites_to_search:
+            results = parse_makeup_pl(page, search_query)
+            all_results.extend(results)
+        
+        if 'sephora' in sites_to_search:
+            results = parse_sephora(page, search_query)
+            all_results.extend(results)
+        
+        if 'douglas' in sites_to_search:
+            results = parse_douglas(page, search_query)
+            all_results.extend(results)
+        
+        if 'brocard' in sites_to_search:
+            results = parse_brocard(page, search_query)
+            all_results.extend(results)
+        
+        page.close()
         context.close()
         browser.close()
     
@@ -193,111 +434,167 @@ def scrape_prices(search_query, urls):
 
 
 # Интерфейс приложения
-col1, col2 = st.columns([1, 1])
-
-with col1:
-    search_query = st.text_input(
-        "🔍 Поисковый запрос (название товара)",
-        placeholder="Например: смартфон samsung",
-        help="Введите название товара для поиска"
-    )
-
-with col2:
-    st.write("")  # Отступ для выравнивания
-
-# Поле для ввода ссылок
-st.markdown("### 🔗 Ссылки на страницы магазинов")
-st.markdown("*Вставьте ссылки на категории или результаты поиска (каждая ссылка с новой строки)*")
-
-urls_input = st.text_area(
-    "URLs",
-    height=150,
-    placeholder="""https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony
-https://www.wildberries.ru/catalog/elektronika/noutbuki-pereferiya""",
-    label_visibility="collapsed"
+st.markdown("### 🔍 Поиск товара")
+search_query = st.text_input(
+    "Введите название товара или бренд",
+    placeholder="Например: Dior Sauvage, Chanel No 5, тональный крем",
+    help="Поиск будет выполнен по всем выбранным магазинам"
 )
 
-# Примеры ссылок
-with st.expander("📝 Примеры ссылок для тестирования"):
-    st.code("""
-# Wildberries - Смартфоны
-https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/smartfony
+st.markdown("### 🏪 Выберите магазины для поиска")
 
-# Wildberries - Ноутбуки
-https://www.wildberries.ru/catalog/elektronika/noutbuki-pereferiya/noutbuki-ultrabuki
+col1, col2, col3 = st.columns(3)
 
-# Для поиска конкретного товара используйте поиск на сайте и скопируйте URL
-    """)
+with col1:
+    notino = st.checkbox("🇵🇱 Notino.pl", value=True)
+    makeup_ua = st.checkbox("🇺🇦 Makeup.com.ua", value=True)
+
+with col2:
+    makeup_pl = st.checkbox("🇵🇱 Makeup.pl", value=True)
+    sephora = st.checkbox("🇵🇱 Sephora.pl", value=True)
+
+with col3:
+    douglas = st.checkbox("🇵🇱 Douglas.pl", value=True)
+    brocard = st.checkbox("🇺🇦 Brocard.ua", value=True)
 
 # Кнопка запуска
-if st.button("🚀 Начать мониторинг", type="primary", use_container_width=True):
-    if not search_query:
-        st.error("❌ Введите поисковый запрос!")
-    elif not urls_input.strip():
-        st.error("❌ Добавьте хотя бы одну ссылку!")
+st.markdown("---")
+if st.button("🚀 Начать поиск", type="primary", use_container_width=True):
+    if not search_query.strip():
+        st.error("❌ Введите название товара!")
     else:
-        urls = [url for url in urls_input.split('\n') if url.strip()]
+        # Собираем выбранные сайты
+        sites = []
+        if notino: sites.append('notino')
+        if makeup_ua: sites.append('makeup_ua')
+        if makeup_pl: sites.append('makeup_pl')
+        if sephora: sites.append('sephora')
+        if douglas: sites.append('douglas')
+        if brocard: sites.append('brocard')
         
-        with st.spinner(f"⏳ Ищу товары по запросу '{search_query}'..."):
-            results = scrape_prices(search_query, urls)
-        
-        if results:
-            st.success(f"✅ Найдено товаров: {len(results)}")
-            
-            # Создаем DataFrame
-            df = pd.DataFrame(results)
-            
-            # Выводим таблицу
-            st.markdown("### 📊 Результаты мониторинга")
-            st.dataframe(
-                df,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Название": st.column_config.TextColumn("Название товара", width="large"),
-                    "Артикул": st.column_config.TextColumn("Артикул", width="medium"),
-                    "Цена": st.column_config.TextColumn("Цена", width="small"),
-                    "Источник": st.column_config.TextColumn("Магазин", width="medium")
-                }
-            )
-            
-            # Кнопка скачивания CSV
-            csv = df.to_csv(index=False, encoding='utf-8-sig')
-            st.download_button(
-                label="📥 Скачать результаты (CSV)",
-                data=csv,
-                file_name=f"price_monitoring_{search_query}.csv",
-                mime="text/csv"
-            )
+        if not sites:
+            st.error("❌ Выберите хотя бы один магазин!")
         else:
-            st.warning("⚠️ Товары не найдены. Попробуйте другой запрос или проверьте ссылки.")
+            with st.spinner(f"⏳ Ищу '{search_query}' в {len(sites)} магазинах... Это может занять несколько минут."):
+                results = scrape_prices(search_query, sites)
+            
+            if results:
+                st.success(f"✅ Найдено товаров: {len(results)}")
+                
+                df = pd.DataFrame(results)
+                
+                # Статистика
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Всего товаров", len(results))
+                with col2:
+                    st.metric("Магазинов", df['Магазин'].nunique())
+                with col3:
+                    brands_count = len(df[df['Бренд'].str.strip() != '']['Бренд'].unique())
+                    st.metric("Брендов", brands_count)
+                
+                st.markdown("### 📊 Результаты поиска")
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Магазин": st.column_config.TextColumn("Магазин", width="small"),
+                        "Бренд": st.column_config.TextColumn("Бренд", width="medium"),
+                        "Название": st.column_config.TextColumn("Товар", width="large"),
+                        "Цена": st.column_config.TextColumn("Цена", width="small"),
+                        "Ссылка": st.column_config.LinkColumn("Ссылка", width="small")
+                    }
+                )
+                
+                # Скачивание
+                csv = df.to_csv(index=False, encoding='utf-8-sig')
+                st.download_button(
+                    label="📥 Скачать результаты (CSV)",
+                    data=csv,
+                    file_name=f"cosmetics_{search_query.replace(' ', '_')}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.warning("⚠️ Товары не найдены. Попробуйте:\n- Изменить поисковый запрос\n- Использовать более общее название\n- Проверить правильность написания")
 
-# Инструкция по использованию
+# Инструкция
 with st.expander("❓ Как использовать приложение"):
     st.markdown("""
-    ### Пошаговая инструкция:
+    ### 📝 Инструкция:
     
-    1. **Введите название товара** в поле поиска (например: "смартфон samsung")
+    1. **Введите название товара** (например: "Dior Sauvage", "помада Maybelline")
+    2. **Выберите магазины**, где нужно искать (по умолчанию все)
+    3. **Нажмите "Начать поиск"** и подождите 2-5 минут
+    4. **Просмотрите результаты** в таблице
+    5. **Скачайте CSV** при необходимости
     
-    2. **Добавьте ссылки** на страницы магазинов:
-       - Откройте сайт магазина (например, Wildberries)
-       - Перейдите в нужную категорию или используйте поиск на сайте
-       - Скопируйте URL из адресной строки браузера
-       - Вставьте ссылку в поле "Ссылки на страницы магазинов"
+    ### 💡 Советы для лучших результатов:
     
-    3. **Нажмите "Начать мониторинг"** и дождитесь результатов
+    - ✅ **Хорошие запросы**: "Chanel Coco", "крем Nivea", "тушь Maybelline"
+    - ❌ **Плохие запросы**: "крем" (слишком общее), "123456" (артикул может не работать)
+    - 🔍 Используйте **название бренда + тип товара** для точности
+    - 🌍 Учитывайте язык: польские сайты лучше искать на польском/английском
     
-    4. **Сохраните результаты** в CSV-файл при необходимости
+    ### 🔧 Поддерживаемые магазины:
     
-    ### 🔧 Адаптация под другие сайты:
+    - 🇵🇱 **Notino.pl** - парфюмерия, косметика, уход
+    - 🇺🇦 **Makeup.com.ua** - косметика, уход за кожей
+    - 🇵🇱 **Makeup.pl** - польская версия Makeup
+    - 🇵🇱 **Sephora.pl** - премиум косметика и парфюмерия
+    - 🇵🇱 **Douglas.pl** - косметика, парфюмерия, уход
+    - 🇺🇦 **Brocard.ua** - парфюмерия и косметика
     
-    Чтобы добавить поддержку нового магазина:
-    1. Откройте сайт в браузере Chrome/Edge
-    2. Нажмите F12 (DevTools) → Выберите элемент (Ctrl+Shift+C)
-    3. Наведите на карточку товара и найдите CSS-селекторы
-    4. Откройте код и найдите функцию `parse_generic_site`
-    5. Замените селекторы, помеченные 🔧
+    ### ⚠️ Важные замечания:
+    
+    - ⏱️ Поиск может занять **2-5 минут** в зависимости от количества магазинов
+    - 🔄 Селекторы обновляются, но могут устареть при изменении дизайна сайта
+    - 🛡️ Некоторые сайты могут иметь защиту от автоматического парсинга
+    - 📊 Результаты зависят от наличия товара и работы поиска на сайте
+    - 💱 Цены в разных валютах: PLN (польский злотый), UAH (украинская гривна)
+    
+    ### 🐛 Если что-то не работает:
+    
+    1. Проверьте интернет-соединение
+    2. Попробуйте другой поисковый запрос
+    3. Выберите меньше магазинов для тестирования
+    4. Убедитесь, что Playwright установлен корректно
+    """)
+
+with st.expander("🔧 Техническая информация"):
+    st.markdown("""
+    ### Используемые селекторы:
+    
+    **Notino.pl:**
+    - Карточки: `div[class*="styled__box"]`
+    - Название: `h3, div[class*="ProductTitle"]`
+    - Бренд: `span[class*="ProductBrand"]`
+    - Цена: `span[class*="Price"]`
+    
+    **Makeup (UA/PL):**
+    - Карточки: `div.catalog-item`
+    - Название: `a.catalog-item__name`
+    - Бренд: `span.catalog-item__brand`
+    - Цена: `span[data-price]`
+    
+    **Sephora.pl:**
+    - Карточки: `div[data-at="product_tile"]`
+    - Название: `span[data-at="sku_name"]`
+    - Бренд: `span[data-at="brand_name"]`
+    - Цена: `span[data-at="price"]`
+    
+    **Douglas.pl:**
+    - Карточки: `div[class*="product-tile"]`
+    - Название: `span[class*="product-name"]`
+    - Цена: `span[class*="price"]`
+    
+    **Brocard.ua:**
+    - Карточки: `div[class*="product-item"]`
+    - Название: `a[class*="product-name"]`
+    - Цена: `span[class*="price"]`
+    
+    *Селекторы актуальны на момент создания (декабрь 2024)*
     """)
 
 st.markdown("---")
-st.markdown("*💡 Совет: Если приложение не находит товары, попробуйте обновить CSS-селекторы в коде*")
+st.markdown("*💄 Приложение для мониторинга цен косметики и парфюмерии | Версия 2.0*")
